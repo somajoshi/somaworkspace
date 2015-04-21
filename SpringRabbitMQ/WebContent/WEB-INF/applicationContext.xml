@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:rabbit="http://www.springframework.org/schema/rabbit" xmlns:p="http://www.springframework.org/schema/p"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+http://www.springframework.org/schema/beans/spring-beans-4.0.xsd http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.0.xsd http://www.springframework.org/schema/rabbit http://www.springframework.org/schema/rabbit/spring-rabbit-1.0.xsd">
+
+	<context:component-scan base-package="com.sg.glfi.fcc.originator" />
+
+	<context:annotation-config />
+
+	<!-- Connection factory for connection establishment -->
+	<rabbit:connection-factory id="connectionFactory"
+		host="localhost" port="5672" username="guest" password="guest" />
+
+	<!-- Create an exchange -->
+	<rabbit:direct-exchange name="directExchange" id="directExchange" />
+
+	<rabbit:topic-exchange id="topicExchange" name="topicExchange" />
+	
+	<rabbit:fanout-exchange id="fanoutExchange" name="fanoutExchange" />
+
+	<bean id="messageConverter"
+		class="org.springframework.amqp.support.converter.JsonMessageConverter"></bean>
+
+	<!-- Template for sending messages -->
+	<rabbit:template id="amqpTemplate" connection-factory="connectionFactory"
+		exchange="directExchange" message-converter="messageConverter"/>
+
+	<!-- Admin object for creation of queues -->
+	<rabbit:admin connection-factory="connectionFactory" id="amqpAdmin" />
+
+	<bean id="dealConsumer1"
+		class="com.sg.glfi.fcc.originator.entity.deal.message.DealConsumer1" autowire="byName"></bean>
+
+	<bean id="dealConsumer2"
+		class="com.sg.glfi.fcc.originator.entity.deal.message.DealConsumer2"></bean>
+
+	<!-- Listener container for setting up concurrent listeners for queues -->
+	<bean id="simpleMessageListenerContainer"
+		class="org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer">
+		<constructor-arg index="0" ref="connectionFactory" />
+		<property name="missingQueuesFatal" value="false" />
+		<property name="concurrentConsumers" value="5" />
+		<property name="autoStartup" value="false" />
+		<property name="messageListener" ref="messageQueueManager" />
+	</bean>
+	
+<!-- 		<bean id="simpleMessageListenerContainer1"
+		class="org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer">
+		<constructor-arg index="0" ref="connectionFactory" />
+		<property name="missingQueuesFatal" value="false" />
+		<property name="concurrentConsumers" value="5" />
+		<property name="autoStartup" value="true" />
+		<property name="deal1" ref="dealConsumer1" />
+	</bean> -->
+</beans>
